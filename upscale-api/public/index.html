@@ -96,8 +96,17 @@ label:first-child{margin-top:0}
 .job .bar>div{height:100%;background:#fff;border-radius:999px;transition:width .25s linear}
 .result{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .result img{width:100%;border-radius:10px;border:1px solid var(--line);background:#000;max-height:320px;object-fit:contain}
-.result .pair{display:flex;gap:2px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
-.result .pair img{width:50%;border:none;border-radius:0;max-height:260px}
+.result.pair{display:flex;flex-direction:column;gap:8px}
+.result.pair .cell{width:100%}
+.result.pair .cell label{display:block;text-align:center;margin:0 0 4px;font-size:10px;letter-spacing:1px;color:var(--dim)}
+.result.pair img{width:100%;max-height:260px}
+.result.pair.imgonly{display:block}
+@media (min-width:560px){
+  .result.pair{flex-direction:row}
+  .result.pair .cell{flex:1}
+}
+.filechip img{width:22px;height:22px;object-fit:cover;border-radius:6px;flex:none}
+.previso{width:100%;border-radius:10px;border:1px solid var(--line);background:#000;max-height:320px;object-fit:contain;margin-top:12px;opacity:.6}
 .actions{display:flex;gap:10px;margin-top:12px}
 .actions .btn{flex:1;padding:12px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#fff;color:#000;
@@ -206,17 +215,18 @@ document.addEventListener("paste", e => {
 function addFiles(list) {
   for (const f of list) {
     if (!f.type.startsWith("image/")) continue;
-    state.files.push(f);
+    state.files.push({ file: f, url: URL.createObjectURL(f) });
   }
   renderFiles();
 }
 
 function renderFiles() {
-  const names = state.files.reduce((m, f) => (m[f.name] = (m[f.name] || 0) + 1, m), {});
   $("#files").innerHTML = state.files.map((f, i) =>
-    `<span class="filechip">${escapeHtml(f.name)}${names[f.name] > 1 ? " ×" + names[f.name] : ""} <b data-i="${i}">✕</b></span>`).join("");
+    `<span class="filechip"><img src="${f.url}" alt=""><span class="name">${escapeHtml(f.file.name)}</span> <b data-i="${i}">✕</b></span>`).join("");
   $("#files").querySelectorAll("b").forEach(b => b.onclick = () => {
-    state.files.splice(Number(b.dataset.i), 1);
+    const i = Number(b.dataset.i);
+    URL.revokeObjectURL(state.files[i].url);
+    state.files.splice(i, 1);
     renderFiles();
   });
 }
@@ -239,7 +249,7 @@ $("#go").onclick = async () => {
   btn.textContent = "QUEUING 0/" + total + "…";
   for (const f of state.files) {
     const fd = new FormData();
-    fd.append("image", f);
+    fd.append("image", f.file);
     fd.append("scale", valOf.scale());
     fd.append("model", valOf.model());
     fd.append("format", valOf.format());
@@ -321,21 +331,35 @@ function upsert(j) {
   ref.meta.textContent = meta.filter(Boolean).join(" · ");
   ref.bar.style.width = (j.progress || 0) + "%";
 
-  if (j.status === "done" && !ref.resultBox) {
+  if (!ref.resultBox && j.status !== "cancelled") {
+    ref.resultBox = document.createElement("div");
+    ref.resultBox.className = "result pair";
+    const sideReq = j.options && j.options.sideBySide;
+    ref.resultBox.innerHTML = `
+      <div class="cell"><label>BEFORE</label><img class="previso" src="/api/jobs/${j.id}/input?v=1" alt="before"></div>
+      <div class="cell" data-role="after"><label>AFTER${sideReq ? "" : ""}</label><img src="" alt="after" style="display:none"></div>`;
+    ref.row.appendChild(ref.resultBox);
+    ref.resultBox.querySelector(".cell[data-role=after] img").onload = function() {
+      this.style.display = "";
+    };
+  }
+  if (j.status === "done" && ref.resultBox) {
     const fmt = j.options && j.options.format === "webp" ? "webp" : j.options && j.options.format === "jpg" ? "jpg" : "png";
     const cb = "?v=" + (j.finishedAt || Date.now());
-    ref.resultBox = document.createElement("div");
-    ref.resultBox.className = "result";
-    if (j.options && j.options.sideBySide) {
-      ref.resultBox.innerHTML = `<div class="pair"><img src="/api/jobs/${j.id}/result${cb}" alt="after"><img src="/api/jobs/${j.id}/side${cb}" alt="before | after"></div>`;
-    } else {
-      ref.resultBox.innerHTML = `<img src="/api/jobs/${j.id}/result${cb}" alt="result">`;
+    const afterCell = ref.resultBox.querySelector(".cell[data-role=after]");
+    if (afterCell) {
+      const img = afterCell.querySelector("img");
+      img.onload = () => { img.style.display = ""; };
+      img.src = "/api/jobs/" + j.id + "/result" + cb;
+      img.style.display = "";
     }
-    ref.row.appendChild(ref.resultBox);
-    const a = document.createElement("div");
-    a.className = "actions";
-    a.innerHTML = `<a class="btn" href="/api/jobs/${j.id}/result${cb}" download>DOWNLOAD ${fmt.toUpperCase()}</a>`;
-    ref.row.appendChild(a);
+    if (!ref.dl) {
+      const a = document.createElement("div");
+      a.className = "actions";
+      a.innerHTML = `<a class="btn" href="/api/jobs/${j.id}/result${cb}" download>DOWNLOAD ${fmt.toUpperCase()}</a>`;
+      ref.row.appendChild(a);
+      ref.dl = a;
+    }
   }
   if (j.status === "queued" && !ref.cancelBtn) {
     ref.cancelBtn = document.createElement("div");
@@ -369,7 +393,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.style.opacity = 0, 2600);
 }
 
-api("/api/jobs").then(r => r.json()).then(list => list.forEach(upsert)).catch(() => {});
+
 </script>
 </body>
 </html>

@@ -76,6 +76,12 @@ app.get("/api/jobs/:id/stream", (req, res) => {
   jobsApi.subscribe(job.id, res);
 });
 
+app.get("/api/jobs/:id/input", (req, res) => {
+  const job = jobsApi.get(req.params.id);
+  if (!job) return res.status(404).json({ error: "NOT_FOUND" });
+  res.sendFile(job.inputPath);
+});
+
 app.post("/api/jobs/:id/cancel", (req, res) => {
   res.json({ cancelled: jobsApi.cancel(req.params.id) });
 });
