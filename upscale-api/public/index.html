@@ -3,80 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111214">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Local AI image upscaler — upscale to 4K on your own network.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000'/><text x='32' y='44' font-family='Arial' font-size='34' font-weight='700' fill='%23fff' text-anchor='middle'>U</text></svg>">
 <title>Upscale — 4K Enhancer</title>
 <style>
 :root{
-  --bg:#101112; --panel:#17181a; --panel2:#1e2023; --line:#2a2d31;
-  --txt:#e8eaed; --dim:#9aa0a6; --faint:#6b7178;
-  --accent:#f2f2f2; --accent-ink:#0c0d0e; --fill:#3a3d41;
+  --bg:#000; --panel:#0d0e10; --panel2:#16181a; --line:#2a2d31;
+  --txt:#f2f3f5; --dim:#9aa0a6; --faint:#5f646b;
+  --accent:#f6f7f8; --accent-ink:#000;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--txt);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  font-size:16px;line-height:1.45}
-body{max-width:720px;margin:0 auto;padding:16px 16px 48px}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-header h1{font-size:18px;font-weight:700;letter-spacing:.4px}
-header h1 span{opacity:.55}
-.badge{font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body{max-width:720px;margin:0 auto;padding:16px 16px 60px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
-label{display:block;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
+.mono,.pill{font-variant-numeric:tabular-nums}
+
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--txt);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;letter-spacing:-1px}
+header h1{font-size:17px;font-weight:700;letter-spacing:.4px}
+header h1 span{opacity:.5;font-weight:400}
+.lan{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);border:1px solid var(--line);
+  border-radius:999px;padding:4px 10px}
+.dot{width:7px;height:7px;border-radius:50%;background:#2fd566;animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+label{display:block;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin:16px 0 8px}
 label:first-child{margin-top:0}
-select,input[type=range],input[type=number]{width:100%;background:var(--panel2);color:var(--txt);
-  border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px;appearance:none}
-input[type=range]{padding:0;height:26px;accent-color:#d0d0d0}
-.row{display:flex;gap:10px}
-.row>*{flex:1}
+.group{margin-bottom:4px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.chip{flex:1;min-width:64px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+  border-radius:10px;padding:10px 6px;font-size:13px;text-align:center;cursor:pointer;user-select:none;
+  transition:border-color .12s,color .12s,background .12s}
+.chip.on{background:var(--txt);color:var(--accent-ink);border-color:var(--txt);font-weight:600}
+.srange{display:flex;align-items:center;gap:12px}
+.srange input[type=range]{flex:1;height:22px;accent-color:#fff;appearance:none;-webkit-appearance:none;background:transparent}
+.srange input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:999px;background:#2a2d31}
+.srange input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:#fff;margin-top:-7px;box-shadow:0 0 0 3px #000}
+.srange input[type=range]::-moz-range-track{height:4px;border-radius:999px;background:#2a2d31}
+.srange input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:none}
+.srange .val{min-width:44px;text-align:right;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px}
+
 .toggle{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);
-  border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+  border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;flex:1;min-width:150px}
 .toggle .tlabel{font-size:14px}
-.switch{width:44px;height:26px;background:#33363a;border-radius:999px;position:relative;transition:background .15s;flex:none}
-.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#8a8f96;transition:.15s}
+.switch{width:44px;height:26px;background:#25272b;border-radius:999px;position:relative;transition:background .15s;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#6b7178;transition:.15s}
 .toggle.on .switch{background:#c9ccd0}
-.toggle.on .switch::after{left:21px;background:#101112}
-#drop{border:2px dashed var(--line);border-radius:14px;padding:34px 18px;text-align:center;
+.toggle.on .switch::after{left:21px;background:#000}
+
+#drop{border:2px dashed var(--line);border-radius:14px;padding:36px 18px;text-align:center;
   cursor:pointer;transition:border-color .15s;background:var(--panel)}
-#drop.hover{border-color:#e8eaed}
+#drop.hover{border-color:#fff}
 #drop .big{font-size:15px;font-weight:600}
 #drop .sub{font-size:12px;color:var(--dim);margin-top:6px}
 #files{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.filechip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 14px;
-  font-size:13px;display:flex;align-items:center;gap:8px}
-.filechip b{cursor:pointer;color:var(--dim);font-weight:600}
+.filechip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+  font-size:13px;display:flex;align-items:center;gap:8px;max-width:100%}
+.filechip b{cursor:pointer;color:var(--dim);font-weight:600;padding:0 3px}
 .btn{display:block;width:100%;background:var(--accent);color:var(--accent-ink);border:none;
-  border-radius:12px;padding:15px;font-size:16px;font-weight:700;letter-spacing:.3px;cursor:pointer}
+  border-radius:12px;padding:15px;font-size:16px;font-weight:700;letter-spacing:.3px;cursor:pointer;
+  transition:transform .06s,opacity .15s}
+.btn:active{transform:scale(.985)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
-.job{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
-.job .top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
-.job .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.job .meta{font-size:11px;color:var(--dim);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
-.bar{height:6px;background:#26282c;border-radius:999px;margin-top:10px;overflow:hidden}
-.bar>div{height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
-.status{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim);flex:none}
-.status.done{color:#fff;border-color:#fff}
-.status.error{color:#fff;border-color:#fff}
-.result{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+#jobsPanel{content-visibility:auto;contain-intrinsic-size:400px}
+.queuehead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.queuehead label{margin:0}
+.queuehead .count{font-size:12px;color:var(--dim)}
+.job{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px;
+  content-visibility:auto;contain-intrinsic-size:120px}
+.job .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.job .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}
+.job .status{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim);
+  flex:none;display:flex;align-items:center;gap:5px}
+.job .status .tdot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.job .status.processing .tdot{background:#f9d423;animation:pulse .8s infinite}
+.job .status.done{color:#fff;border-color:#3a3d41}
+.job .status.done .tdot{background:#2fd566}
+.job .status.error{color:#fff;border-color:#3a3d41}
+.job .status.error .tdot{background:#ff5b5b}
+.job .meta{font-size:11px;color:var(--dim);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.job .bar{height:5px;background:#232529;border-radius:999px;margin-top:10px;overflow:hidden}
+.job .bar>div{height:100%;background:#fff;border-radius:999px;transition:width .25s linear}
+.result{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .result img{width:100%;border-radius:10px;border:1px solid var(--line);background:#000;max-height:320px;object-fit:contain}
 .result .pair{display:flex;gap:2px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .result .pair img{width:50%;border:none;border-radius:0;max-height:260px}
-.actions{display:flex;gap:10px;margin-top:10px}
-.actions .btn{flex:1}
-#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:99;padding:24px}
-#gate .box{width:100%;max-width:340px;text-align:center}
-#gate input{text-align:center;letter-spacing:6px;font-size:22px;margin:16px 0}
-.hidden{display:none!important}
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#e8eaed;color:#0c0d0e;
-  padding:10px 18px;border-radius:999px;font-size:13px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none}
+.actions{display:flex;gap:10px;margin-top:12px}
+.actions .btn{flex:1;padding:12px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#fff;color:#000;
+  padding:11px 20px;border-radius:999px;font-size:13px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none;
+  box-shadow:0 8px 30px rgba(0,0,0,.6);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 small{color:var(--faint);font-size:11px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>UPSCALE <span>— 4K Enhancer</span></h1>
-  <span class="badge" id="engineBadge">connecting…</span>
+  <div class="brand"><div class="logo">U</div><h1>UPSCALE <span>— 4K Enhancer</span></h1></div>
+  <span class="lan" id="lan"><span class="dot"></span><span id="lanTxt">LAN</span></span>
 </header>
 
 <div id="drop">
@@ -86,37 +121,33 @@ small{color:var(--faint);font-size:11px}
 <div id="files"></div>
 
 <div class="panel">
-  <div class="row">
-    <div>
-      <label>Scale</label>
-      <select id="scale"><option value="4" selected>4x</option><option value="3">3x</option><option value="2">2x</option></select>
-    </div>
-    <div>
-      <label>Model</label>
-      <select id="model">
-        <option value="auto" selected>Auto (smart)</option>
-        <option value="photo">Photo — RealESRGAN</option>
-        <option value="anime">Anime — AnimeVideo</option>
-        <option value="fast">Fast — General</option>
-        <option value="hifi">High Fidelity</option>
-      </select>
+  <div class="group">
+    <label>Model</label>
+    <div class="seg" id="modelSeg">
+      <div class="chip on" data-v="auto">Auto</div>
+      <div class="chip" data-v="photo">Photo</div>
+      <div class="chip" data-v="anime">Anime</div>
+      <div class="chip" data-v="fast">Fast</div>
+      <div class="chip" data-v="hifi">Hifi</div>
     </div>
   </div>
-  <div class="row">
-    <div>
-      <label>Output</label>
-      <select id="format"><option value="png" selected>PNG</option><option value="jpg">JPEG</option><option value="webp">WebP</option></select>
-    </div>
-    <div>
-      <label>Quality <span id="qval" style="color:var(--txt)">92</span></label>
-      <input type="range" id="quality" min="60" max="100" value="92">
-    </div>
+  <label>Scale</label>
+  <div class="seg" id="scaleSeg">
+    <div class="chip" data-v="2">2x</div>
+    <div class="chip" data-v="3">3x</div>
+    <div class="chip on" data-v="4">4x</div>
   </div>
-  <label>Denoise <span id="dval" style="color:var(--txt)">auto</span></label>
-  <input type="range" id="denoise" min="0" max="100" value="0">
-  <label>Sharpen <span id="sval" style="color:var(--txt)">100%</span></label>
-  <input type="range" id="sharpen" min="0" max="100" value="100">
-  <div class="row" style="margin-top:14px">
+  <label>Output</label>
+  <div class="seg" id="formatSeg">
+    <div class="chip on" data-v="png">PNG</div>
+    <div class="chip" data-v="jpg">JPEG</div>
+    <div class="chip" data-v="webp">WebP</div>
+  </div>
+  <label>Denoise <span class="pill" id="dval">auto</span></label>
+  <div class="srange"><input type="range" id="denoise" min="0" max="100" value="0"></div>
+  <label>Sharpen <span class="pill" id="sval">100%</span></label>
+  <div class="srange"><input type="range" id="sharpen" min="0" max="100" value="100"></div>
+  <div class="seg" style="margin-top:16px">
     <div class="toggle on" id="faceTgl"><span class="tlabel">Face enhance</span><span class="switch"></span></div>
     <div class="toggle" id="sideTgl"><span class="tlabel">Side-by-side</span><span class="switch"></span></div>
   </div>
@@ -124,7 +155,10 @@ small{color:var(--faint);font-size:11px}
 </div>
 
 <div class="panel hidden" id="jobsPanel">
-  <label>Queue</label>
+  <div class="queuehead">
+    <label style="margin:0">Queue</label>
+    <span class="count" id="queueCount"></span>
+  </div>
   <div id="jobs"></div>
 </div>
 
@@ -133,14 +167,29 @@ small{color:var(--faint);font-size:11px}
 
 <script>
 const $ = s => document.querySelector(s);
-const state = { files: [], streams: {} };
+const state = { files: [], streams: {}, rows: new Map(), live: 0, done: 0 };
 
-const engineBadge = $("#engineBadge");
 fetch("/api/health").then(r => r.json()).then(h => {
-  engineBadge.textContent = "engine: " + (h.engine || "?") + " · " + (h.models ? h.models.length : 0) + " models";
-}).catch(() => engineBadge.textContent = "offline");
+  $("#lanTxt").textContent = "LAN · " + (h.models ? h.models.length : 0) + " models";
+}).catch(() => $("#lanTxt").textContent = "offline");
 
 const api = (url, opt = {}) => fetch(url, opt);
+
+function segs(id) {
+  const box = $(id);
+  box.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    box.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+  });
+  return () => {
+    const c = box.querySelector(".chip.on");
+    return c ? c.dataset.v : "auto";
+  };
+}
+const valOf = {
+  model: segs("#modelSeg"),
+  scale: segs("#scaleSeg"),
+  format: segs("#formatSeg"),
+};
 
 const drop = $("#drop");
 drop.onclick = () => $("#fileInput").click();
@@ -163,8 +212,9 @@ function addFiles(list) {
 }
 
 function renderFiles() {
+  const names = state.files.reduce((m, f) => (m[f.name] = (m[f.name] || 0) + 1, m), {});
   $("#files").innerHTML = state.files.map((f, i) =>
-    `<span class="filechip">${escapeHtml(f.name)} <b data-i="${i}">✕</b></span>`).join("");
+    `<span class="filechip">${escapeHtml(f.name)}${names[f.name] > 1 ? " ×" + names[f.name] : ""} <b data-i="${i}">✕</b></span>`).join("");
   $("#files").querySelectorAll("b").forEach(b => b.onclick = () => {
     state.files.splice(Number(b.dataset.i), 1);
     renderFiles();
@@ -175,15 +225,8 @@ function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-const updaters = {
-  denoise: v => $("#dval").textContent = v == 0 ? "auto" : v + "%",
-  sharpen: v => $("#sval").textContent = v + "%",
-  quality: v => $("#qval").textContent = v,
-};
-for (const [id, fn] of Object.entries(updaters)) {
-  const el = $("#" + id);
-  el.oninput = () => fn(el.value);
-}
+$("#denoise").oninput = e => $("#dval").textContent = e.target.value == 0 ? "auto" : e.target.value + "%";
+$("#sharpen").oninput = e => $("#sval").textContent = e.target.value + "%";
 $("#faceTgl").onclick = () => $("#faceTgl").classList.toggle("on");
 $("#sideTgl").onclick = () => $("#sideTgl").classList.toggle("on");
 
@@ -191,16 +234,16 @@ $("#go").onclick = async () => {
   if (!state.files.length) return toast("Select at least one image first");
   const btn = $("#go");
   btn.disabled = true;
-  btn.textContent = "QUEUING…";
   const total = state.files.length;
   let n = 0;
+  btn.textContent = "QUEUING 0/" + total + "…";
   for (const f of state.files) {
     const fd = new FormData();
     fd.append("image", f);
-    fd.append("scale", $("#scale").value);
-    fd.append("model", $("#model").value);
-    fd.append("format", $("#format").value);
-    fd.append("quality", $("#quality").value);
+    fd.append("scale", valOf.scale());
+    fd.append("model", valOf.model());
+    fd.append("format", valOf.format());
+    fd.append("quality", 92);
     fd.append("denoise", $("#denoise").value == 0 ? "auto" : Number($("#denoise").value) / 100);
     fd.append("sharpen", Number($("#sharpen").value) / 100);
     fd.append("saturation", 1);
@@ -211,77 +254,110 @@ $("#go").onclick = async () => {
       const j = await r.json();
       if (j.id) subscribe(j.id);
       n++;
-    } catch (e) { toast("Upload failed: " + e.message); }
+    } catch (e) { toast("Upload failed"); }
+    btn.textContent = "QUEUING " + n + "/" + total + "…";
   }
   state.files = [];
   renderFiles();
   btn.disabled = false;
   btn.textContent = "UPSCALE";
   toast(n + "/" + total + " queued");
-  renderJobs();
 };
 
-const jobsEl = $("#jobs");
-const rows = new Map();
-
-function renderJobs() {
-  const isEmpty = jobsEl.children.length === 0;
-  $("#jobsPanel").classList.toggle("hidden", isEmpty);
-}
-
 function subscribe(id) {
-  if (state.streams[id]) return;
+  if (state.streams.has(id)) return;
   const es = new EventSource("/api/jobs/" + id + "/stream");
-  state.streams[id] = es;
+  state.streams.set(id, es);
   es.onmessage = e => {
     const j = JSON.parse(e.data);
     upsert(j);
     if (j.status === "done" || j.status === "error" || j.status === "cancelled") {
       es.close();
-      delete state.streams[id];
+      state.streams.delete(id);
     }
   };
-  es.onerror = () => { es.close(); delete state.streams[id]; };
+  es.onerror = () => { es.close(); state.streams.delete(id); };
+}
+
+function buildRow(j) {
+  const row = document.createElement("div");
+  row.className = "job";
+  row.innerHTML = `
+    <div class="top">
+      <span class="name">${escapeHtml(j.originalName || j.id)}</span>
+      <span class="status"><span class="tdot"></span><span class="stext">queued</span></span>
+    </div>
+    <div class="meta"></div>
+    <div class="bar"><div style="width:0%"></div></div>`;
+  const ref = {
+    row,
+    status: row.querySelector(".status"),
+    stext: row.querySelector(".stext"),
+    meta: row.querySelector(".meta"),
+    bar: row.querySelector(".bar > div"),
+    resultBox: null,
+  };
+  $("#jobs").prepend(row);
+  state.rows.set(j.id, ref);
+  return ref;
 }
 
 function upsert(j) {
-  let row = rows.get(j.id);
-  if (!row) {
-    row = document.createElement("div");
-    row.className = "job";
-    jobsEl.prepend(row);
-    rows.set(j.id, row);
-  }
-  const statusText = { queued: "queued", processing: "running", done: "done", error: "failed", cancelled: "cancelled" }[j.status] || j.status;
-  let body = `<div class="top"><span class="name">${escapeHtml(j.originalName || j.id)}</span>
-    <span class="status ${j.status}">${statusText}</span></div>`;
-  body += `<div class="meta">`;
-  if (j.model) body += `model: ${j.model} · `;
-  if (j.scale) body += `${j.scale}x · `;
-  if (j.stage) body += `${j.stage}`;
-  if (j.queuePos) body += ` · position ${j.queuePos}`;
-  if (j.etaSec != null && j.status === "processing") body += ` · ~${j.etaSec}s left`;
-  if (j.durationMs) body += ` · ${Math.round(j.durationMs / 1000)}s`;
-  if (j.error) body += ` · ${escapeHtml(String(j.error).slice(0, 90))}`;
-  body += `</div>`;
-  body += `<div class="bar"><div style="width:${j.progress || 0}%"></div></div>`;
-  if (j.status === "done") {
-    const out = j.options && j.options.format === "jpg" || (j.options && j.options.format === "jpeg") ? "jpg" : j.options && j.options.format === "webp" ? "webp" : "png";
-    body += `<div class="result">`;
+  let ref = state.rows.get(j.id);
+  if (!ref) ref = buildRow(j);
+  const t = { queued: "queued", processing: "running", done: "done", error: "failed", cancelled: "cancelled" }[j.status] || j.status;
+  ref.status.className = "status " + j.status;
+  ref.stext.textContent = t;
+  const meta = [];
+  if (j.model) meta.push(j.model);
+  if (j.scale) meta.push(j.scale + "x");
+  if (j.stage) meta.push(j.stage);
+  if (j.queuePos) meta.push("pos " + j.queuePos);
+  if (j.etaSec != null && j.status === "processing") meta.push("~" + j.etaSec + "s left");
+  if (j.durationMs) meta.push(Math.round(j.durationMs / 1000) + "s");
+  if (j.outWidth && j.outHeight) meta.push(j.outWidth + "×" + j.outHeight);
+  if (j.face !== undefined) meta.push(j.face ? "faces+" : "");
+  if (j.error) meta.push(String(j.error).slice(0, 80));
+  ref.meta.textContent = meta.filter(Boolean).join(" · ");
+  ref.bar.style.width = (j.progress || 0) + "%";
+
+  if (j.status === "done" && !ref.resultBox) {
+    const fmt = j.options && j.options.format === "webp" ? "webp" : j.options && j.options.format === "jpg" ? "jpg" : "png";
+    const cb = "?v=" + (j.finishedAt || Date.now());
+    ref.resultBox = document.createElement("div");
+    ref.resultBox.className = "result";
     if (j.options && j.options.sideBySide) {
-      body += `<div class="pair"><img src="/api/jobs/${j.id}/result" alt="after"><img src="/api/jobs/${j.id}/side" alt="before | after"></div>`;
+      ref.resultBox.innerHTML = `<div class="pair"><img src="/api/jobs/${j.id}/result${cb}" alt="after"><img src="/api/jobs/${j.id}/side${cb}" alt="before | after"></div>`;
     } else {
-      body += `<img src="/api/jobs/${j.id}/result" alt="result">`;
+      ref.resultBox.innerHTML = `<img src="/api/jobs/${j.id}/result${cb}" alt="result">`;
     }
-    body += `</div><div class="actions"><a class="btn" href="/api/jobs/${j.id}/result" download>DOWNLOAD</a></div>`;
+    ref.row.appendChild(ref.resultBox);
+    const a = document.createElement("div");
+    a.className = "actions";
+    a.innerHTML = `<a class="btn" href="/api/jobs/${j.id}/result${cb}" download>DOWNLOAD ${fmt.toUpperCase()}</a>`;
+    ref.row.appendChild(a);
   }
-  if (j.status === "queued") {
-    body += `<div class="actions"><button class="btn ghost" data-cancel="${j.id}">CANCEL</button></div>`;
+  if (j.status === "queued" && !ref.cancelBtn) {
+    ref.cancelBtn = document.createElement("div");
+    ref.cancelBtn.className = "actions";
+    ref.cancelBtn.innerHTML = `<button class="btn ghost" data-cancel="${j.id}">CANCEL</button>`;
+    ref.row.appendChild(ref.cancelBtn);
+    ref.cancelBtn.querySelector("[data-cancel]").onclick = () => api("/api/jobs/" + j.id + "/cancel", { method: "POST" });
   }
-  row.innerHTML = body;
-  const cbtn = row.querySelector("[data-cancel]");
-  if (cbtn) cbtn.onclick = () => api("/api/jobs/" + j.id + "/cancel", { method: "POST" });
+  if (j.status !== "queued" && ref.cancelBtn) { ref.cancelBtn.remove(); ref.cancelBtn = null; }
   renderJobs();
+}
+
+function renderJobs() {
+  $("#jobsPanel").classList.toggle("hidden", $("#jobs").children.length === 0);
+  let live = 0, done = 0, fail = 0;
+  for (const ref of state.rows.values()) {
+    const s = ref.status.className;
+    if (s.includes("processing")) live++;
+    else if (s.includes("done")) done++;
+    else if (s.includes("error")) fail++;
+  }
+  $("#queueCount").textContent = [live && live + " running", done && done + " done", fail && fail + " failed"].filter(Boolean).join(" · ");
 }
 
 let toastTimer;
