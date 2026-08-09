@@ -1,0 +1,7 @@
+node_modules/
+tmp/
+bin/upscayl-bin-20251207-174704-windows/
+python/models/
+models/
+*.zip
+app-extract/
