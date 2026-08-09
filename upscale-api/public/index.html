@@ -64,9 +64,12 @@ label:first-child{margin-top:0}
 #drop .big{font-size:15px;font-weight:600}
 #drop .sub{font-size:12px;color:var(--dim);margin-top:6px}
 #files{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.filechip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;
-  font-size:13px;display:flex;align-items:center;gap:8px;max-width:100%}
+.filechip{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;
+  font-size:13px;display:flex;align-items:center;gap:10px;max-width:100%}
+.filechip img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:none}
+.filechip .name{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filechip b{cursor:pointer;color:var(--dim);font-weight:600;padding:0 3px}
+.hidden{display:none!important}
 .btn{display:block;width:100%;background:var(--accent);color:var(--accent-ink);border:none;
   border-radius:12px;padding:15px;font-size:16px;font-weight:700;letter-spacing:.3px;cursor:pointer;
   transition:transform .06s,opacity .15s}
@@ -94,19 +97,24 @@ label:first-child{margin-top:0}
 .job .meta{font-size:11px;color:var(--dim);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
 .job .bar{height:5px;background:#232529;border-radius:999px;margin-top:10px;overflow:hidden}
 .job .bar>div{height:100%;background:#fff;border-radius:999px;transition:width .25s linear}
-.result{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.result img{width:100%;border-radius:10px;border:1px solid var(--line);background:#000;max-height:320px;object-fit:contain}
-.result.pair{display:flex;flex-direction:column;gap:8px}
-.result.pair .cell{width:100%}
-.result.pair .cell label{display:block;text-align:center;margin:0 0 4px;font-size:10px;letter-spacing:1px;color:var(--dim)}
-.result.pair img{width:100%;max-height:260px}
-.result.pair.imgonly{display:block}
-@media (min-width:560px){
-  .result.pair{flex-direction:row}
-  .result.pair .cell{flex:1}
-}
-.filechip img{width:22px;height:22px;object-fit:cover;border-radius:6px;flex:none}
-.previso{width:100%;border-radius:10px;border:1px solid var(--line);background:#000;max-height:320px;object-fit:contain;margin-top:12px;opacity:.6}
+.cmp{position:relative;width:100%;margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:#000;user-select:none;-webkit-user-select:none;touch-action:none;cursor:ew-resize}
+.cmp img{display:block;width:100%;max-height:min(82vh,700px);object-fit:contain}
+.cmp .before{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--p,50%)) 0 0)}
+.cmp .after{width:100%}
+.cmp .divider{position:absolute;top:0;bottom:0;left:var(--p,50%);width:2px;background:#fff;
+  transform:translateX(-1px);box-shadow:0 0 12px rgba(0,0,0,.8)}
+.cmp .grip{position:absolute;top:50%;left:var(--p,50%);transform:translate(-50%,-50%);
+  width:34px;height:34px;border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;letter-spacing:-1px;box-shadow:0 2px 12px rgba(0,0,0,.6)}
+.cmp .tag{position:absolute;top:10px;font-size:10px;letter-spacing:1.5px;padding:3px 9px;border-radius:999px;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);color:#fff;pointer-events:none}
+.cmp .tag.b{left:10px}.cmp .tag.a{right:10px}
+.cmphint{text-align:center;font-size:11px;color:var(--dim);margin-top:8px;transition:opacity .8s}
+.fsovl{position:fixed;inset:0;background:#000;z-index:101;display:flex;align-items:center;justify-content:center;padding:12px}
+.fsovl .cmp{max-height:calc(100vh - 80px);margin:0;border:none}
+.fsovl .x{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);
+  color:#fff;border:1px solid rgba(255,255,255,.3);font-size:18px;line-height:1;cursor:pointer;z-index:2}
 .actions{display:flex;gap:10px;margin-top:12px}
 .actions .btn{flex:1;padding:12px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#fff;color:#000;
@@ -176,7 +184,7 @@ small{color:var(--faint);font-size:11px}
 
 <script>
 const $ = s => document.querySelector(s);
-const state = { files: [], streams: {}, rows: new Map(), live: 0, done: 0 };
+const state = { files: [], streams: new Map(), rows: new Map(), live: 0, done: 0 };
 
 fetch("/api/health").then(r => r.json()).then(h => {
   $("#lanTxt").textContent = "LAN · " + (h.models ? h.models.length : 0) + " models";
@@ -289,6 +297,46 @@ function subscribe(id) {
   es.onerror = () => { es.close(); state.streams.delete(id); };
 }
 
+function initCompare(cmp) {
+  let dragging = false;
+  const setPos = (e) => {
+    const r = cmp.getBoundingClientRect();
+    let p = ((e.clientX - r.left) / r.width) * 100;
+    p = Math.max(3, Math.min(97, p));
+    cmp.style.setProperty("--p", p + "%");
+  };
+  cmp.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    cmp.setPointerCapture(e.pointerId);
+    setPos(e);
+  });
+  cmp.addEventListener("pointermove", (e) => { if (dragging) setPos(e); });
+  ["pointerup", "pointercancel"].forEach(ev => cmp.addEventListener(ev, () => { dragging = false; }));
+}
+
+function openFullscreen(id) {
+  const row = state.rows.get(id);
+  if (!row || !row.resultBox) return;
+  const cb = "?v=" + Date.now();
+  const o = document.createElement("div");
+  o.className = "fsovl hidden";
+  o.innerHTML = `
+    <button class="x">✕</button>
+    <div class="cmp" style="--p:50%">
+      <img class="after" src="/api/jobs/${id}/result${cb}" alt="after">
+      <img class="before" src="/api/jobs/${id}/input${cb}" alt="before">
+      <div class="divider"></div><div class="grip">⇔</div>
+      <span class="tag b">BEFORE</span><span class="tag a">AFTER</span>
+    </div>`;
+  document.body.appendChild(o);
+  requestAnimationFrame(() => o.classList.remove("hidden"));
+  o.querySelector(".x").onclick = () => { o.remove(); };
+  o.addEventListener("pointerdown", (e) => { if (e.target === o) o.remove(); });
+  initCompare(o.querySelector(".cmp"));
+  const esc = (e) => { if (e.key === "Escape") { o.remove(); document.removeEventListener("keydown", esc); } };
+  document.addEventListener("keydown", esc);
+}
+
 function buildRow(j) {
   const row = document.createElement("div");
   row.className = "job";
@@ -333,25 +381,29 @@ function upsert(j) {
 
   if (!ref.resultBox && j.status !== "cancelled") {
     ref.resultBox = document.createElement("div");
-    ref.resultBox.className = "result pair";
-    const sideReq = j.options && j.options.sideBySide;
+    const cb = "?v=" + (j.createdAt || 1);
     ref.resultBox.innerHTML = `
-      <div class="cell"><label>BEFORE</label><img class="previso" src="/api/jobs/${j.id}/input?v=1" alt="before"></div>
-      <div class="cell" data-role="after"><label>AFTER${sideReq ? "" : ""}</label><img src="" alt="after" style="display:none"></div>`;
+      <div class="cmp" data-id="${j.id}">
+        <img class="after" src="/api/jobs/${j.id}/result${cb}" alt="after" style="display:none">
+        <img class="before" src="/api/jobs/${j.id}/input${cb}" alt="before">
+        <div class="divider"></div><div class="grip">⇔</div>
+        <span class="tag b">BEFORE</span><span class="tag a">AFTER</span>
+      </div>
+      <div class="cmphint">← drag to compare →</div>`;
     ref.row.appendChild(ref.resultBox);
-    ref.resultBox.querySelector(".cell[data-role=after] img").onload = function() {
-      this.style.display = "";
-    };
+    const cmp = ref.resultBox.querySelector(".cmp");
+    initCompare(cmp);
+    cmp.addEventListener("click", () => openFullscreen(cmp.dataset.id));
+    setTimeout(() => { const h = ref.resultBox.querySelector(".cmphint"); if (h) h.style.opacity = 0; }, 4000);
+    ref.cmp = cmp;
   }
   if (j.status === "done" && ref.resultBox) {
     const fmt = j.options && j.options.format === "webp" ? "webp" : j.options && j.options.format === "jpg" ? "jpg" : "png";
     const cb = "?v=" + (j.finishedAt || Date.now());
-    const afterCell = ref.resultBox.querySelector(".cell[data-role=after]");
-    if (afterCell) {
-      const img = afterCell.querySelector("img");
-      img.onload = () => { img.style.display = ""; };
-      img.src = "/api/jobs/" + j.id + "/result" + cb;
-      img.style.display = "";
+    const after = ref.resultBox.querySelector(".cmp .after");
+    if (after) {
+      after.onload = () => { after.style.display = ""; };
+      after.src = "/api/jobs/" + j.id + "/result" + cb;
     }
     if (!ref.dl) {
       const a = document.createElement("div");
