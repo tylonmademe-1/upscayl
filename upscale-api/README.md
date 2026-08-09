@@ -18,7 +18,7 @@ Upscayl app uses (`upscayl-bin.exe`, ncnn Vulkan). Runs on your PC and is usable
   - Auto pre-downscale of huge images (OOM safety on iGPUs)
   - Batch queue, cancel, side-by-side before/after, PNG/JPEG/WebP output
 - **API**: `POST /api/upload` → job → SSE live progress → result download
-- **UI**: dark, monochrome, professional, phone-first, batch upload, PIN gate
+- **UI**: dark, monochrome, professional, phone-first, batch upload
 
 ## Quick start (Windows)
 
@@ -28,7 +28,6 @@ npm start          # or double-click start.bat
 ```
 
 Open the URL printed in the console (or scan the QR code) from your phone.
-PIN is printed at startup (set `UPSCAYL_REQUIRE_PIN=1` to enforce it).
 
 First run needs Python deps:
 
@@ -68,8 +67,7 @@ curl -o result.png http://<PC-IP>:3000/api/jobs/<id>/result
 
 ## Env vars
 
-`PORT` (default 3000), `HOST` (default 0.0.0.0), `UPSCAYL_REQUIRE_PIN=1` (enforce PIN),
-`UPSCAYL_PIN` (fixed PIN), `PYTHON` (python executable).
+`PORT` (default 3000), `HOST` (default 0.0.0.0), `PYTHON` (python executable).
 
 ## Files
 

@@ -74,15 +74,6 @@ small{color:var(--faint);font-size:11px}
 </head>
 <body>
 
-<div id="gate">
-  <div class="box">
-    <header style="justify-content:center;margin-bottom:8px"><h1>UPSCALE</h1></header>
-    <p style="color:var(--dim);font-size:13px">Enter the PIN shown on the server console to continue.</p>
-    <input id="pin" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
-    <button class="btn" id="pinBtn">UNLOCK</button>
-  </div>
-</div>
-
 <header>
   <h1>UPSCALE <span>— 4K Enhancer</span></h1>
   <span class="badge" id="engineBadge">connecting…</span>
@@ -142,31 +133,14 @@ small{color:var(--faint);font-size:11px}
 
 <script>
 const $ = s => document.querySelector(s);
-const state = { pin: localStorage.getItem("pin") || "", files: [], streams: {} };
+const state = { files: [], streams: {} };
 
 const engineBadge = $("#engineBadge");
 fetch("/api/health").then(r => r.json()).then(h => {
   engineBadge.textContent = "engine: " + (h.engine || "?") + " · " + (h.models ? h.models.length : 0) + " models";
 }).catch(() => engineBadge.textContent = "offline");
 
-fetch("/api/pin").then(r => r.json()).then(p => {
-  if (!p.required || state.pin) return;
-  $("#gate").classList.remove("hidden");
-  if (state.pin) $("#pin").value = state.pin;
-}).catch(() => {});
-
-$("#pinBtn").onclick = () => {
-  state.pin = $("#pin").value.trim();
-  localStorage.setItem("pin", state.pin);
-  $("#gate").classList.add("hidden");
-  location.reload();
-};
-
-const api = (url, opt = {}) => {
-  const h = Object.assign({}, opt.headers || {});
-  if (state.pin) h["x-pin"] = state.pin;
-  return fetch(url, Object.assign({}, opt, { headers: h }));
-};
+const api = (url, opt = {}) => fetch(url, opt);
 
 const drop = $("#drop");
 drop.onclick = () => $("#fileInput").click();

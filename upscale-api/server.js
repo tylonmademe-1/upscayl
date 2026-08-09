@@ -25,29 +25,12 @@ const upload = multer({
   limits: { fileSize: 60 * 1024 * 1024 },
 });
 
-function pinOk(req) {
-  if (!process.env.UPSCAYL_REQUIRE_PIN) return true;
-  return req.get("x-pin") === config.PIN;
-}
-
-app.use("/api", (req, res, next) => {
-  if (req.path === "/pin") return next();
-  if (req.path === "/health") return next();
-  if (pinOk(req)) return next();
-  return res.status(401).json({ error: "UNAUTHORIZED", message: "Invalid or missing PIN" });
-});
-
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     engine: "upscayl-ncnn (Vulkan)",
-    pin: process.env.UPSCAYL_REQUIRE_PIN ? "required" : "optional",
     models: scanModels(),
   });
-});
-
-app.get("/api/pin", (req, res) => {
-  res.json({ required: Boolean(process.env.UPSCAYL_REQUIRE_PIN) });
 });
 
 app.get("/api/models", (req, res) => {
@@ -167,7 +150,6 @@ app.listen(config.PORT, config.HOST, () => {
   console.log("  UPSCAYL API  (forked + tuned)");
   console.log("  ──────────────────────────────");
   console.log("  Models loaded: " + models.length + "  " + (models.slice(0, 6).join(", ")));
-  console.log("  PIN: " + config.PIN + (process.env.UPSCAYL_REQUIRE_PIN ? "  (required)" : "  (optional, set UPSCAYL_REQUIRE_PIN=1 to enforce)"));
   console.log("  API:  POST /api/upload   GET /api/jobs/:id   GET /api/jobs/:id/stream");
   console.log("        GET /api/jobs/:id/result   GET /api/models   GET /api/health");
   console.log("  UI:   " + url);

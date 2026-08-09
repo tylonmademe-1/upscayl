@@ -18,7 +18,6 @@ const BIN_PATH = path.join(
 const PYTHON = process.env.PYTHON || "python";
 const MAX_INPUT_PIXELS = 16777216;
 const JOB_TTL_MS = 30 * 60 * 1000;
-const PIN = process.env.UPSCAYL_PIN || crypto.randomInt(100000, 999999).toString();
 
 const MODEL_PRESETS = {
   auto: { label: "Auto (smart)", files: null },
@@ -64,7 +63,6 @@ module.exports = {
   PYTHON,
   MAX_INPUT_PIXELS,
   JOB_TTL_MS,
-  PIN,
   MODEL_PRESETS,
   FALLBACK_MODELS,
   lanIPs,
